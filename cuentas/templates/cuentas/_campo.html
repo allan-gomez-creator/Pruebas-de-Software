@@ -1,0 +1,31 @@
+{% comment %}
+  cuentas/templates/cuentas/_campo.html — PARCIAL que dibuja UN campo de formulario.
+  Uso:  {% include 'cuentas/_campo.html' with campo=form.email %}
+  Pinta la etiqueta, el <input>, el texto de ayuda y los errores de ese
+  campo. Así no se repite el mismo HTML en cada formulario.
+  (El guion bajo al inicio del nombre indica que no es una página completa.)
+{% endcomment %}
+{# Si el campo tiene errores se agrega la clase "campo-error" (borde rojo en el CSS) #}
+<div class="campo{% if campo.errors %} campo-error{% endif %}">
+  {# id_for_label conecta la etiqueta con su input: al hacer clic en el texto se enfoca el campo #}
+  <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+
+  {% if campo.field.widget.input_type == 'password' %}
+    {# Campos de contraseña: se agrega el botón "Ver" (lo controla formularios.js) #}
+    <div class="campo-password">
+      {{ campo }}
+      <button type="button" class="ver-password" data-objetivo="{{ campo.id_for_label }}" aria-label="Mostrar contraseña">Ver</button>
+    </div>
+  {% else %}
+    {# {{ campo }} dibuja el <input> completo; si hay errores le agrega aria-invalid="true" #}
+    {{ campo }}
+  {% endif %}
+
+  {# Texto de ayuda definido en forms.py (help_text), si existe #}
+  {% if campo.help_text %}<p class="ayuda" id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</p>{% endif %}
+
+  {# Un párrafo rojo por cada error de validación de este campo #}
+  {% for error in campo.errors %}
+    <p class="error">{{ error }}</p>
+  {% endfor %}
+</div>

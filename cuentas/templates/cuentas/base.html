@@ -1,0 +1,62 @@
+{% comment %}
+  cuentas/templates/cuentas/base.html — PLANTILLA BASE.
+  Es el esqueleto común de todas las páginas: <head>, barra superior,
+  mensajes y pie. Las demás plantillas la "extienden" con
+  {% extends 'cuentas/base.html' %} y solo llenan los bloques
+  {% block titulo %} y {% block contenido %}.
+  Sintaxis de Django: {{ variable }} imprime un valor y {% etiqueta %}
+  ejecuta lógica (if, for, url...). {# ... #} es un comentario de una línea.
+{% endcomment %}
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  {# viewport: hace que la página se adapte bien a pantallas de celular #}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Cada página pone su propio título en el bloque "titulo" #}
+  <title>{% block titulo %}Sprint 1{% endblock %} · Módulo de autenticación</title>
+  {# {% static %} arma la URL del archivo CSS dentro de cuentas/static/ #}
+  <link rel="stylesheet" href="{% static 'cuentas/css/estilos.css' %}">
+</head>
+<body>
+  {# ===== Barra superior ===== #}
+  <header class="barra">
+    {# {% url 'cuentas:login' %} genera "/cuentas/login/" a partir del nombre de la ruta #}
+    <a class="marca" href="{% url 'cuentas:login' %}">
+      <span class="marca-icono" aria-hidden="true">◆</span> Sprint 1 <span class="marca-sub">Autenticación</span>
+    </a>
+    <nav class="nav" aria-label="Principal">
+      {# "user" está disponible en todas las plantillas: es el usuario actual #}
+      {% if user.is_authenticated %}
+        {# Con sesión iniciada: enlace al panel y su primer nombre #}
+        <a href="{% url 'cuentas:panel' %}">Mi panel</a>
+        <span class="nav-usuario" title="{{ user.email }}">{{ user.get_short_name }}</span>
+        {# HU-04 (cerrar sesión): el equipo que la implemente agrega aquí su botón. #}
+      {% else %}
+        {# Sin sesión: enlaces a login y registro. aria-current marca la página actual #}
+        <a href="{% url 'cuentas:login' %}" {% if request.resolver_match.url_name == 'login' %}aria-current="page"{% endif %}>Iniciar sesión</a>
+        <a class="nav-boton" href="{% url 'cuentas:registro' %}" {% if request.resolver_match.url_name == 'registro' %}aria-current="page"{% endif %}>Crear cuenta</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="contenido">
+    {# ===== Mensajes de una sola vez (ej. "¡Cuenta creada con éxito!", CA-01.6) ===== #}
+    {# Se muestran una vez y Django los borra solo. message.tags = "success", "error"... #}
+    {% if messages %}
+      <div class="mensajes" role="status">
+        {% for message in messages %}
+          <p class="mensaje mensaje-{{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# Aquí cada página pone su contenido #}
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer class="pie">Pruebas de Software · Uniempresarial</footer>
+  {# defer: el JavaScript se ejecuta cuando el HTML ya terminó de cargar #}
+  <script src="{% static 'cuentas/js/formularios.js' %}" defer></script>
+</body>
+</html>

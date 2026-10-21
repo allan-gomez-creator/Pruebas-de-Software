@@ -1,0 +1,44 @@
+{# cuentas/templates/cuentas/registro.html — PÁGINA DE REGISTRO (HU-01). #}
+{# La dibuja la vista "registro" con la variable {{ form }} (un RegistroForm). #}
+{# Hereda el esqueleto de base.html #}
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Crear cuenta{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta" aria-labelledby="titulo-registro">
+  <p class="etiqueta">HU-01</p>
+  <h1 id="titulo-registro">Crea tu cuenta</h1>
+  <p class="subtitulo">Completa tus datos para acceder a las funciones para usuarios registrados.</p>
+
+  {# Errores generales del formulario (los que no son de un campo concreto) #}
+  {% if form.non_field_errors %}
+    <div class="alerta" role="alert">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+  {% endif %}
+
+  {# method="post": los datos viajan en el cuerpo de la petición, no en la URL #}
+  {# novalidate: desactiva la validación del navegador; la validación la hace SIEMPRE el servidor (forms.py) #}
+  <form method="post" novalidate>
+    {# Token CSRF obligatorio en todo formulario POST de Django (sin él, la petición se rechaza con 403) #}
+    {% csrf_token %}
+
+    {# CA-01.1: los cuatro campos, dibujados con el parcial _campo.html #}
+    {% include 'cuentas/_campo.html' with campo=form.nombre %}
+    {% include 'cuentas/_campo.html' with campo=form.email %}
+    {% include 'cuentas/_campo.html' with campo=form.password1 %}
+
+    {# Lista visual de requisitos; formularios.js marca cada uno mientras se escribe #}
+    {# data-requisitos-de indica el id del input de contraseña que se vigila #}
+    <ul class="requisitos" aria-label="Requisitos de la contraseña" data-requisitos-de="{{ form.password1.id_for_label }}">
+      <li data-regla="longitud">8 caracteres o más</li>
+      <li data-regla="mayuscula">Una mayúscula</li>
+      <li data-regla="minuscula">Una minúscula</li>
+      <li data-regla="numero">Un número</li>
+    </ul>
+
+    {% include 'cuentas/_campo.html' with campo=form.password2 %}
+    <button type="submit" class="boton">Crear cuenta</button>
+  </form>
+
+  <p class="alterno">¿Ya tienes cuenta? <a href="{% url 'cuentas:login' %}">Inicia sesión</a></p>
+</section>
+{% endblock %}

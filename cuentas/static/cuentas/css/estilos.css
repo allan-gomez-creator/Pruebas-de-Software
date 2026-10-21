@@ -1,0 +1,185 @@
+/* =============================================================================
+   cuentas/static/cuentas/css/estilos.css — ESTILOS del módulo de autenticación.
+   Solo presentación: no afecta la lógica ni los criterios de aceptación.
+   ============================================================================= */
+
+/* ---------- Variables de diseño ----------
+   :root define variables CSS que se reutilizan con var(--nombre).
+   Cambiar un color aquí lo cambia en toda la página. */
+:root {
+  --fondo: #f4f2ee;          /* fondo de la página (crema) */
+  --superficie: #ffffff;     /* fondo de tarjetas y barra */
+  --tinta: #1d2321;          /* texto principal */
+  --tinta-suave: #5b6461;    /* texto secundario */
+  --borde: #d9d6cf;          /* bordes */
+  --acento: #1f5f4a;         /* verde de botones y enlaces */
+  --acento-hover: #174a39;   /* verde más oscuro al pasar el mouse */
+  --acento-suave: #e3efe9;   /* verde muy claro de fondos */
+  --error: #b42318;          /* rojo de errores */
+  --error-suave: #fdecea;    /* fondo rojo claro de campos con error */
+  --exito: #1f5f4a;          /* color de requisitos cumplidos */
+  --aviso-suave: #fff6dc;    /* fondo amarillo de avisos */
+  --radio: 10px;             /* redondeo de esquinas */
+  --sombra: 0 1px 2px rgba(29, 35, 33, .06), 0 8px 24px rgba(29, 35, 33, .06);
+  /* Fuente del sistema operativo: carga rápido y se ve nativa */
+  --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* box-sizing: border-box hace que el ancho incluya padding y borde (más fácil de calcular) */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Página completa en columna: barra arriba, contenido en medio, pie abajo */
+body {
+  margin: 0;
+  min-height: 100vh;               /* al menos la altura de la ventana */
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a { color: var(--acento); }
+a:hover { color: var(--acento-hover); }
+
+/* ---------- Barra superior ---------- */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;  /* marca a la izquierda, navegación a la derecha */
+  gap: 16px;
+  padding: 14px clamp(16px, 4vw, 40px);  /* clamp: margen que crece con la pantalla entre 16 y 40px */
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+}
+.marca { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--tinta); text-decoration: none; }
+.marca-icono { color: var(--acento); }
+.marca-sub { font-weight: 400; color: var(--tinta-suave); }
+.nav { display: flex; align-items: center; gap: 16px; font-size: 15px; }
+.nav a { text-decoration: none; color: var(--tinta-suave); }
+/* La página actual (aria-current="page") se resalta en negrita */
+.nav a[aria-current="page"] { color: var(--tinta); font-weight: 600; }
+.nav .nav-boton { padding: 6px 12px; border: 1px solid var(--borde); border-radius: 8px; color: var(--tinta); }
+/* "Pastilla" verde con el nombre del usuario conectado */
+.nav-usuario { padding: 4px 10px; border-radius: 999px; background: var(--acento-suave); color: var(--acento); font-weight: 600; }
+
+/* ---------- Zona central ---------- */
+.contenido {
+  flex: 1;                 /* ocupa el espacio sobrante y empuja el pie hacia abajo */
+  width: 100%;
+  max-width: 460px;        /* ancho máximo de los formularios */
+  margin: 0 auto;          /* centrado horizontal */
+  padding: 40px 16px;
+}
+/* Si la página tiene una tarjeta ancha (el panel), el contenido se ensancha */
+.contenido:has(.tarjeta-ancha) { max-width: 640px; }
+
+/* Tarjeta blanca que contiene cada formulario */
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: clamp(20px, 5vw, 36px);
+}
+/* Etiqueta pequeña "HU-01", "HU-02", "Área privada" */
+.etiqueta {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--acento-suave);
+  color: var(--acento);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.etiqueta-privada { background: var(--tinta); color: #fff; }
+h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
+.subtitulo { margin: 0 0 24px; color: var(--tinta-suave); }
+
+/* ---------- Campos de formulario ---------- */
+.campo { margin-bottom: 18px; }
+.campo label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+.campo input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--tinta);
+  font: inherit;           /* usa la misma fuente de la página */
+}
+/* Contorno verde cuando el campo está activo (accesibilidad con teclado) */
+.campo input:focus { outline: 2px solid var(--acento); outline-offset: 1px; border-color: var(--acento); }
+/* Campo con error: borde y fondo rojos (clase campo-error o aria-invalid que pone Django) */
+.campo-error input, .campo input[aria-invalid="true"] { border-color: var(--error); background: var(--error-suave); }
+/* Contenedor de contraseña: el botón "Ver" se posiciona encima del input, a la derecha */
+.campo-password { position: relative; }
+.campo-password input { padding-right: 64px; }   /* espacio para que el texto no quede debajo del botón */
+.ver-password {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);  /* centrado vertical */
+  padding: 4px 10px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--acento); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.ver-password:hover { background: var(--acento-suave); }
+.ayuda { margin: 6px 0 0; font-size: 13px; color: var(--tinta-suave); }
+.error { margin: 6px 0 0; font-size: 13px; color: var(--error); font-weight: 500; }
+.error::before { content: "⚠ "; }   /* ícono antes de cada mensaje de error */
+
+/* ---------- Requisitos de contraseña (ayuda visual; la regla real se valida en el servidor) ---------- */
+.requisitos {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;   /* dos columnas */
+  margin: -8px 0 18px; padding: 0; list-style: none; font-size: 13px; color: var(--tinta-suave);
+}
+.requisitos li::before { content: "○ "; }          /* pendiente */
+.requisitos li.cumple { color: var(--exito); }     /* la clase "cumple" la pone formularios.js */
+.requisitos li.cumple::before { content: "● "; }   /* cumplido */
+
+/* ---------- Botón principal ---------- */
+.boton {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton:hover { background: var(--acento-hover); }
+.boton:focus-visible { outline: 3px solid var(--acento-suave); outline-offset: 2px; }
+
+/* Línea "¿Ya tienes cuenta? Inicia sesión" */
+.alterno { margin: 20px 0 0; text-align: center; font-size: 15px; color: var(--tinta-suave); }
+
+/* ---------- Mensajes y alertas ---------- */
+.mensajes { margin-bottom: 16px; }
+.mensaje, .alerta, .aviso { margin: 0 0 16px; padding: 12px 14px; border-radius: 8px; font-size: 15px; }
+.alerta p, .aviso p { margin: 0; }
+/* Verde: éxito ("¡Cuenta creada con éxito!") */
+.mensaje-success { background: var(--acento-suave); color: var(--acento); border: 1px solid #b9d6c9; }
+/* Rojo: errores (incluye el mensaje genérico de login) */
+.mensaje-error, .alerta { background: var(--error-suave); color: var(--error); border: 1px solid #f4c4bf; }
+/* Amarillo: aviso "Debes iniciar sesión para ver esa página" */
+.aviso { background: var(--aviso-suave); color: #7a5a00; border: 1px solid #f1dc9b; }
+
+/* ---------- Panel privado: tabla de datos del usuario ---------- */
+.datos { display: grid; gap: 0; margin: 0; border-top: 1px solid var(--borde); }
+.datos div { display: grid; grid-template-columns: 200px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+.datos dt { color: var(--tinta-suave); font-size: 14px; }
+.datos dd { margin: 0; font-weight: 500; word-break: break-word; }   /* correos largos no se salen */
+
+.pie { padding: 20px 16px; text-align: center; font-size: 13px; color: var(--tinta-suave); }
+
+/* ---------- Pantallas pequeñas (celular) ----------
+   Estas reglas solo aplican si la pantalla mide 520px de ancho o menos. */
+@media (max-width: 520px) {
+  .marca-sub { display: none; }                               /* oculta "Autenticación" en la barra */
+  .datos div { grid-template-columns: 1fr; gap: 2px; }        /* dato y valor uno debajo del otro */
+  .requisitos { grid-template-columns: 1fr; }                 /* requisitos en una sola columna */
+}
