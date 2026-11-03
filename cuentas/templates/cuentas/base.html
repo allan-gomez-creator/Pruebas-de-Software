@@ -53,6 +53,13 @@
 
     {# Aquí cada página pone su contenido #}
     {% block contenido %}{% endblock %}
+    {% if user.is_authenticated %}
+    
+  <form method="post" action="{% url 'cuentas:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="boton">Cerrar sesión</button>
+  </form>
+{% endif %}
   </main>
 
   <footer class="pie">Pruebas de Software · Uniempresarial</footer>

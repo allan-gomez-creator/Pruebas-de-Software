@@ -19,6 +19,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # =============================================================================
+# RECUPERACIÓN DE CONTRASEÑA (HU-03)
+# =============================================================================
+# Vigencia del enlace en SEGUNDOS (CA-03.4). Por defecto Django usa 3 días,
+# así que sin esta línea el criterio de 30 minutos NO se cumple.
+PASSWORD_RESET_TIMEOUT = 60 * 30
+
+# Remitente de los correos. Por defecto sería webmaster@localhost.
+
+
+# =============================================================================
 # SEGURIDAD
 # =============================================================================
 
@@ -66,9 +76,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',                # ajustes comunes de URLs
     'django.middleware.csrf.CsrfViewMiddleware',                # exige token CSRF en los POST
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # pone request.user (usuario actual)
+    'cuentas.middleware.SinCachePrivadasMiddleware',            # HU-04: sin caché en páginas privadas
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',     # habilita messages.success(...)
     'django.middleware.clickjacking.XFrameOptionsMiddleware',   # evita que el sitio se meta en un iframe ajeno
 ]
+
 
 # Archivo con las rutas principales del proyecto.
 ROOT_URLCONF = 'Sprint_1.urls'
@@ -192,11 +205,17 @@ STATIC_URL = 'static/'
 # =============================================================================
 # CORREO
 # =============================================================================
-# Backend de consola: en lugar de enviar correos, los imprime en la terminal
-# donde corre el servidor. Sirve como "buzón de desarrollo" para HU-03
-# (recuperar contraseña), que es de otro compañero.
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Si EMAIL_HOST_USER está definido, se envía por SMTP (correo real).
+# Si no, se usa el backend de consola para desarrollo.
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+if EMAIL_HOST_USER:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 465
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+else:
+    EMAIL_BACKEND = 'cuentas.correo_consola.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'no-reply@tudominio.com'

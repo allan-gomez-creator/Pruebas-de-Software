@@ -32,6 +32,6 @@
   </form>
 
   <p class="alterno">¿No tienes cuenta? <a href="{% url 'cuentas:registro' %}">Regístrate</a></p>
-  {# HU-03 (recuperar contraseña): el equipo que la implemente agrega aquí su enlace. #}
+    <p class="alterno"><a href="{% url 'cuentas:recuperar' %}">¿Olvidaste tu contraseña?</a></p>
 </section>
 {% endblock %}
