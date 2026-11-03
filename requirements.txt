@@ -1,7 +1,9 @@
 # Paquetes de Python que necesita el proyecto.
 # Se instalan todos con:  pip install -r requirements.txt
 # "==" fija la version exacta para que todo el equipo use la misma.
-Django==6.1.2
+Django>=6.1.2
+pytest>=8.0
+pytest-django>=4.8
 
 # Solo si usan PostgreSQL (plan de pruebas, seccion 3.2): quitar el # de la linea
 # psycopg[binary]>=3.2
