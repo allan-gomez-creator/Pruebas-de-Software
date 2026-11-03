@@ -1,13 +1,12 @@
 # cuentas/admin.py — PANEL DE ADMINISTRACIÓN (/admin/).
-# Le dice al admin de Django cómo mostrar y editar el modelo Usuario.
-# El admin trae una pantalla de usuarios pensada para "username"; aquí se
-# adapta a nuestro usuario con correo y nombre.
+# Le dice al admin de Django cómo mostrar y editar el modelo Usuario y el
+# registro de intentos de acceso (IntentoAcceso para evidencia de HU-05).
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin            # pantalla de usuarios que trae Django
 from django.contrib.auth.forms import AdminUserCreationForm, UserChangeForm  # formularios base del admin
 
-from .models import Usuario                                # nuestro modelo (el punto = "de esta misma app")
+from .models import IntentoAcceso, Usuario                 # nuestros modelos
 
 
 class UsuarioCreationForm(AdminUserCreationForm):
@@ -56,3 +55,19 @@ class UsuarioAdmin(UserAdmin):
             'fields': ('email', 'nombre', 'password1', 'password2'),
         }),
     )
+
+
+@admin.register(IntentoAcceso)
+class IntentoAccesoAdmin(admin.ModelAdmin):
+    """Vista en /admin/ para inspeccionar el contador de intentos y bloqueos (HU-05)."""
+    list_display = (
+        'email',
+        'ip_address',
+        'intentos_fallidos',
+        'primer_intento_en',
+        'ultimo_intento_en',
+        'bloqueado_hasta',
+    )
+    list_filter = ('ip_address',)
+    search_fields = ('email', 'ip_address')
+    ordering = ('-ultimo_intento_en',)

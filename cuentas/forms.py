@@ -1,5 +1,5 @@
 """
-cuentas/forms.py — FORMULARIOS: aquí vive la VALIDACIÓN de HU-01 y HU-02.
+cuentas/forms.py — FORMULARIOS: aquí vive la VALIDACIÓN de HU-01, HU-02 y HU-05.
 
 Un formulario de Django hace tres cosas:
   1. Define qué campos tiene (y con eso se dibuja el HTML).
@@ -22,6 +22,7 @@ from django import forms
 from django.contrib.auth import authenticate, password_validation
 
 from .models import Usuario, normalizar_email
+from .services import LimitadorIntentosService
 
 # Mensaje común para campos vacíos (CA-01.2 y CA-02.4).
 MSG_OBLIGATORIO = 'Este campo es obligatorio.'
@@ -122,15 +123,23 @@ class RegistroForm(forms.Form):
 
 
 # =============================================================================
-# HU-02 — Inicio de sesión
+# HU-02 y HU-05 — Inicio de sesión y límite de intentos fallidos
 # =============================================================================
 class InicioSesionForm(forms.Form):
-    """Formulario de "Iniciar sesión"."""
+    """Formulario de "Iniciar sesión" con control de intentos fallidos (HU-02 y HU-05)."""
 
     # CA-02.3: UN SOLO mensaje para cualquier fallo de credenciales. No dice
     # si el correo no existe o si la contraseña está mal, para que nadie
     # pueda averiguar qué correos están registrados.
     MSG_CREDENCIALES_INVALIDAS = 'Correo electrónico o contraseña incorrectos.'
+
+    # CA-05.2 y CA-05.3: Mensaje comprensible cuando la combinación (cuenta, IP)
+    # se encuentra bloqueada temporalmente por 15 minutos, sin revelar si el
+    # correo existe ni si la contraseña ingresada era válida.
+    MSG_CUENTA_BLOQUEADA = (
+        'Demasiados intentos fallidos de inicio de sesión. Por seguridad, el acceso '
+        'se ha bloqueado temporalmente durante 15 minutos. Intenta nuevamente más tarde.'
+    )
 
     # CA-02.1: pide correo y contraseña. CA-02.4: ambos obligatorios.
     # Aquí el correo es CharField y no EmailField a propósito: con EmailField,
@@ -151,32 +160,53 @@ class InicioSesionForm(forms.Form):
     )
 
     def __init__(self, request=None, *args, **kwargs):
-        """Constructor: guarda la petición porque authenticate() la necesita."""
+        """Constructor: guarda la petición porque authenticate() y el control de IP la necesitan."""
         self.request = request
         self.usuario = None                       # aquí quedará el usuario si el login es correcto
         super().__init__(*args, **kwargs)         # inicializa el formulario normal de Django
 
     def clean(self):
-        """Intenta autenticar con el correo y la contraseña escritos."""
+        """Valida bloqueo por intentos fallidos (HU-05) y autentica credenciales (HU-02)."""
         cleaned = super().clean()
         email, password = cleaned.get('email'), cleaned.get('password')
 
         # Si falta algún campo ya hay un error "obligatorio" y no se intenta
         # autenticar (CA-02.4).
         if email and password:
-            # authenticate() busca al usuario por correo (get_by_natural_key)
-            # y compara el HASH de la contraseña. Devuelve el usuario si todo
-            # está bien, o None si:
-            #   - el correo no existe,
-            #   - la contraseña es incorrecta,
-            #   - la cuenta está inactiva (is_active=False).
-            # Si el correo no existe, igual calcula un hash para que el tiempo
-            # de respuesta no delate qué correos están registrados.
-            self.usuario = authenticate(self.request, email=normalizar_email(email), password=password)
+            email_norm = normalizar_email(email)
+            ip_cliente = LimitadorIntentosService.obtener_ip_cliente(self.request)
+
+            # 1. CA-05.2 y CA-05.4: Verificar si la combinación (cuenta, IP) tiene un
+            #    bloqueo temporal activo de 15 minutos antes de evaluar las credenciales.
+            if LimitadorIntentosService.esta_bloqueado(email_norm, ip_cliente):
+                raise forms.ValidationError(
+                    self.MSG_CUENTA_BLOQUEADA,
+                    code='cuenta_bloqueada',
+                )
+
+            # 2. CA-02.2 y CA-02.3: Autenticar correo y contraseña contra la base de datos.
+            #    Si el correo no existe, authenticate() igual calcula un hash para evitar
+            #    ataques de tiempo.
+            self.usuario = authenticate(self.request, email=email_norm, password=password)
+
             if self.usuario is None:
-                # Error "general" del formulario (no de un campo): se muestra
-                # arriba, en la caja roja. Siempre el mismo texto (CA-02.3).
-                raise forms.ValidationError(self.MSG_CREDENCIALES_INVALIDAS, code='credenciales_invalidas')
+                # 3. CA-05.1 y CA-05.2: Registrar el intento fallido para (cuenta, IP).
+                registro = LimitadorIntentosService.registrar_intento_fallido(email_norm, ip_cliente)
+                if registro.esta_bloqueado():
+                    # Al alcanzar el 5.º intento fallido consecutivo dentro de los 15 min,
+                    # se activa el bloqueo temporal de 15 minutos y se informa al usuario (CA-05.3).
+                    raise forms.ValidationError(
+                        self.MSG_CUENTA_BLOQUEADA,
+                        code='cuenta_bloqueada',
+                    )
+                raise forms.ValidationError(
+                    self.MSG_CREDENCIALES_INVALIDAS,
+                    code='credenciales_invalidas',
+                )
+
+            # 4. CA-05.5: Un inicio de sesión exitoso reinicia el contador correspondiente.
+            LimitadorIntentosService.reiniciar_intentos(email_norm, ip_cliente)
+
         return cleaned
 
     def get_user(self):
