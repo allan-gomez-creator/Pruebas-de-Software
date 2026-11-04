@@ -1,0 +1,14 @@
+{# cuentas/templates/cuentas/recuperar_enviado.html — MENSAJE GENÉRICO (HU-03). #}
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Revisa tu correo{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta" aria-labelledby="titulo-enviado">
+  <p class="etiqueta">HU-03</p>
+  <h1 id="titulo-enviado">Revisa tu correo</h1>
+  <p class="subtitulo">Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.
+  El enlace es de un solo uso y expira en 30 minutos.</p>
+
+  <p class="alterno"><a href="{% url 'cuentas:login' %}">Volver a iniciar sesión</a></p>
+</section>
+{% endblock %}

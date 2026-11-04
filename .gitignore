@@ -1,0 +1,20 @@
+# .gitignore — archivos y carpetas que git debe IGNORAR (no se suben al repositorio).
+
+# Python: archivos compilados que se generan solos al ejecutar el código
+__pycache__/
+*.py[cod]
+
+# Entornos virtuales: cada integrante crea el suyo con pip install -r requirements.txt
+venv/
+.venv/
+env/
+
+# Base de datos local (cada integrante genera la suya con `migrate`)
+db.sqlite3
+
+# Variables de entorno / secretos (contraseñas de la BD, claves): nunca al repo
+.env
+
+# Configuración personal de los editores
+.vscode/
+.idea/

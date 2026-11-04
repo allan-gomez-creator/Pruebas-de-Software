@@ -1,0 +1,24 @@
+{# cuentas/templates/cuentas/panel.html — ÁREA PRIVADA. #}
+{# Solo se ve con sesión iniciada: la vista "panel" tiene @login_required. #}
+{# {{ user }} es el usuario que inició sesión (lo pone Django automáticamente). #}
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Mi panel{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta tarjeta-ancha" aria-labelledby="titulo-panel">
+  <p class="etiqueta etiqueta-privada">Área privada</p>
+  {# Saludo con el nombre guardado en el registro (CP-14) #}
+  <h1 id="titulo-panel">Hola, {{ user.nombre }}</h1>
+  <p class="subtitulo">Iniciaste sesión correctamente. Solo los usuarios autenticados pueden ver esta página.</p>
+
+  {# <dl> = lista de pares "dato: valor" #}
+  <dl class="datos">
+    <div><dt>Nombre</dt><dd>{{ user.nombre }}</dd></div>
+    <div><dt>Correo electrónico</dt><dd>{{ user.email }}</dd></div>
+    {# Filtro date: da formato a la fecha. \d\e escribe la palabra "de" literal; lower la pasa a minúsculas #}
+    <div><dt>Cuenta creada</dt><dd>{{ user.fecha_registro|date:"j \d\e F \d\e Y, H:i"|lower }}</dd></div>
+    {# default:"—" muestra una raya si nunca ha iniciado sesión #}
+    <div><dt>Último inicio de sesión</dt><dd>{{ user.last_login|date:"j \d\e F \d\e Y, H:i"|lower|default:"—" }}</dd></div>
+  </dl>
+</section>
+{% endblock %}

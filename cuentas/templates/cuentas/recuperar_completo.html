@@ -1,0 +1,13 @@
+{# cuentas/templates/cuentas/recuperar_completo.html — CONTRASEÑA CAMBIADA (HU-03). #}
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Contraseña actualizada{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta" aria-labelledby="titulo-completo">
+  <p class="etiqueta">HU-03</p>
+  <h1 id="titulo-completo">Contraseña actualizada</h1>
+  <p class="subtitulo">Ya puedes iniciar sesión con tu nueva contraseña. La anterior dejó de funcionar.</p>
+
+  <a href="{% url 'cuentas:login' %}" class="boton">Iniciar sesión</a>
+</section>
+{% endblock %}
