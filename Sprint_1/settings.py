@@ -154,6 +154,17 @@ LOGIN_URL = 'cuentas:login'
 # Ruta por defecto después de iniciar sesión (CA-02.5).
 LOGIN_REDIRECT_URL = 'cuentas:panel'
 
+
+# =============================================================================
+# CONTROL DE INTENTOS FALLIDOS DE AUTENTICACIÓN (HU-05)
+# =============================================================================
+# CA-05.1: máximo 5 intentos fallidos consecutivos para una misma combinación
+#          de cuenta e IP durante una ventana de 15 minutos.
+# CA-05.2: al superar el límite, bloqueo temporal durante 15 minutos.
+AUTH_MAX_INTENTOS_FALLIDOS = int(os.environ.get('AUTH_MAX_INTENTOS_FALLIDOS', '5'))
+AUTH_VENTANA_INTENTOS_MINUTOS = int(os.environ.get('AUTH_VENTANA_INTENTOS_MINUTOS', '15'))
+AUTH_TIEMPO_BLOQUEO_MINUTOS = int(os.environ.get('AUTH_TIEMPO_BLOQUEO_MINUTOS', '15'))
+
 # Algoritmo de hash de contraseñas (CA-01.7): PBKDF2-SHA256 con sal aleatoria
 # y 1.500.000 iteraciones. Es el que Django usa por defecto; se deja escrito
 # para que quede documentado. Nunca se guarda la contraseña en texto plano.
