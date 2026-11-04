@@ -1,14 +1,19 @@
 """
-MODELO DE DATOS del módulo de autenticación.
+MODELOS DE DATOS del módulo de autenticación (HU-01, HU-02 y HU-05).
 
 Un "modelo" es una clase de Python que Django convierte en una tabla de la
 base de datos: cada atributo de la clase es una columna y cada objeto es una
-fila. Aquí se define la tabla de usuarios.
+fila. Aquí se definen:
+  1. `Usuario`: tabla de usuarios registrados (HU-01 y HU-02).
+  2. `IntentoAcceso`: tabla de control de intentos fallidos y bloqueos
+     temporales por combinación de cuenta e IP (HU-05).
 
-¿Por qué un modelo propio? El usuario que trae Django inicia sesión con un
-"username". HU-01 y HU-02 piden iniciar sesión con el CORREO, así que se crea
-un usuario donde el correo es el identificador.
+¿Por qué un modelo propio de Usuario? El usuario que trae Django inicia sesión
+con un "username". HU-01 y HU-02 piden iniciar sesión con el CORREO, así que se
+crea un usuario donde el correo es el identificador.
 """
+
+from datetime import timedelta
 
 # AbstractBaseUser: trae lo básico de un usuario (campo password con hash,
 #                   last_login y métodos como set_password / check_password).
@@ -143,3 +148,59 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         """Primer nombre: 'Ana Prueba' -> 'Ana'. Se usa en el saludo y la barra."""
         return self.nombre.split(' ')[0] if self.nombre else self.email
+
+
+# =============================================================================
+# HU-05 — Control de intentos de autenticación fallidos
+# =============================================================================
+class IntentoAcceso(models.Model):
+    """Tabla cuentas_intentoacceso: registra los intentos fallidos consecutivos
+    por cada combinación de cuenta (correo normalizado) y dirección IP.
+
+    ¿Por qué guardar el correo como texto en lugar de una llave foránea a Usuario?
+    Para cumplir CA-05.3 ("sin revelar información sensible"): si alguien intenta
+    iniciar sesión 5 veces con un correo NO registrado desde una misma IP, el
+    sistema aplica exactamente el mismo bloqueo temporal y mensaje que para una
+    cuenta existente, impidiendo la enumeración de usuarios.
+    """
+
+    email = models.CharField('cuenta (correo)', max_length=254)
+    ip_address = models.GenericIPAddressField('dirección IP', default='127.0.0.1')
+    intentos_fallidos = models.PositiveSmallIntegerField('intentos fallidos consecutivos', default=0)
+    primer_intento_en = models.DateTimeField('inicio de ventana (15 min)', default=timezone.now)
+    ultimo_intento_en = models.DateTimeField('último intento fallido', default=timezone.now)
+    bloqueado_hasta = models.DateTimeField('bloqueado hasta', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'intento de acceso'
+        verbose_name_plural = 'intentos de acceso'
+        ordering = ['-ultimo_intento_en']
+        constraints = [
+            # Garantiza una única fila por combinación (LOWER(email), ip_address) (CA-05.1).
+            models.UniqueConstraint(
+                Lower('email'),
+                'ip_address',
+                name='intento_email_ip_unico_ci',
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        """Normaliza siempre el identificador de cuenta antes de guardar."""
+        self.email = normalizar_email(self.email)
+        super().save(*args, **kwargs)
+
+    def esta_bloqueado(self, ahora=None) -> bool:
+        """Indica si el bloqueo temporal de 15 minutos sigue activo (CA-05.2 y CA-05.4)."""
+        if not self.bloqueado_hasta:
+            return False
+        momento = ahora or timezone.now()
+        return momento < self.bloqueado_hasta
+
+    def ventana_expirada(self, ventana_minutos: int, ahora=None) -> bool:
+        """Indica si ya transcurrió la ventana de observación desde el primer fallo (CA-05.1)."""
+        momento = ahora or timezone.now()
+        return (momento - self.primer_intento_en) >= timedelta(minutes=ventana_minutos)
+
+    def __str__(self):
+        estado = 'BLOQUEADO' if self.esta_bloqueado() else f'{self.intentos_fallidos} fallos'
+        return f'{self.email} @ {self.ip_address} ({estado})'

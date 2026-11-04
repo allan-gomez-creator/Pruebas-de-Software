@@ -3,6 +3,7 @@
 # Python: archivos compilados que se generan solos al ejecutar el código
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # Entornos virtuales: cada integrante crea el suyo con pip install -r requirements.txt
 venv/
