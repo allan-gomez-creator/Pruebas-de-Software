@@ -28,10 +28,14 @@
     <nav class="nav" aria-label="Principal">
       {# "user" está disponible en todas las plantillas: es el usuario actual #}
       {% if user.is_authenticated %}
-        {# Con sesión iniciada: enlace al panel y su primer nombre #}
+        {# Con sesión iniciada: enlace al panel, su primer nombre y el botón de cerrar sesión #}
         <a href="{% url 'cuentas:panel' %}">Mi panel</a>
         <span class="nav-usuario" title="{{ user.email }}">{{ user.get_short_name }}</span>
-        {# HU-04 (cerrar sesión): el equipo que la implemente agrega aquí su botón. #}
+        {# HU-04 (CA-04.1): cerrar sesión. Es un formulario POST porque LogoutView rechaza GET (405). #}
+        <form method="post" action="{% url 'cuentas:logout' %}" style="display:inline; margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="nav-boton">Cerrar sesión</button>
+        </form>
       {% else %}
         {# Sin sesión: enlaces a login y registro. aria-current marca la página actual #}
         <a href="{% url 'cuentas:login' %}" {% if request.resolver_match.url_name == 'login' %}aria-current="page"{% endif %}>Iniciar sesión</a>
@@ -53,17 +57,22 @@
 
     {# Aquí cada página pone su contenido #}
     {% block contenido %}{% endblock %}
-    {% if user.is_authenticated %}
-    
-  <form method="post" action="{% url 'cuentas:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="boton">Cerrar sesión</button>
-  </form>
-{% endif %}
   </main>
 
   <footer class="pie">Pruebas de Software · Uniempresarial</footer>
   {# defer: el JavaScript se ejecuta cuando el HTML ya terminó de cargar #}
   <script src="{% static 'cuentas/js/formularios.js' %}" defer></script>
+
+    {% if user.is_authenticated %}
+  <script>
+    // HU-04 (CA-04.4 / CP-32): si el navegador restaura esta página privada desde su
+    // memoria (botón Atrás, bfcache), se recarga para que el servidor valide la sesión.
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        window.location.reload();
+      }
+    });
+  </script>
+  {% endif %}
 </body>
 </html>

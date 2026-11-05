@@ -1,105 +1,96 @@
+
 """
 Sprint_1/settings.py — CONFIGURACIÓN GENERAL del proyecto Django.
 
-Django lee este archivo al arrancar. Aquí se define qué apps usa el
-proyecto, a qué base de datos se conecta, el idioma, las reglas de
-contraseña y cómo funciona el inicio de sesión.
-
-Generado por 'django-admin startproject' (Django 6.1.2) y modificado para
-HU-01 (registro) y HU-02 (inicio de sesión).
-Documentación: https://docs.djangoproject.com/en/6.1/ref/settings/
+Configuración de aplicaciones, base de datos, autenticación,
+seguridad, idioma, sesiones y correo electrónico.
 """
 
-import os                      # para leer variables de entorno (os.environ)
-from pathlib import Path       # para armar rutas de carpetas sin importar el sistema operativo
+import os
+from pathlib import Path
 
-# Carpeta raíz del proyecto (la que contiene manage.py).
-# __file__ es este archivo; .parent.parent sube dos niveles: Sprint_1/ -> raíz.
+# Carpeta raíz del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # =============================================================================
 # RECUPERACIÓN DE CONTRASEÑA (HU-03)
 # =============================================================================
-# Vigencia del enlace en SEGUNDOS (CA-03.4). Por defecto Django usa 3 días,
-# así que sin esta línea el criterio de 30 minutos NO se cumple.
-PASSWORD_RESET_TIMEOUT = 60 * 30
 
-# Remitente de los correos. Por defecto sería webmaster@localhost.
+# Vigencia del enlace de recuperación: 30 minutos.
+PASSWORD_RESET_TIMEOUT = 60 * 30
 
 
 # =============================================================================
 # SEGURIDAD
 # =============================================================================
 
-# Clave secreta: Django la usa para firmar cookies de sesión y tokens CSRF.
-# os.environ.get('X', 'valor') lee la variable de entorno X; si no existe,
-# usa 'valor'. En desarrollo se usa la clave de abajo; en un servidor real
-# se define la variable DJANGO_SECRET_KEY y nunca se sube al repositorio.
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
     'django-insecure-ujdih_llus32=mmvpf+hwpq0^#oe@n=ab*7#sscrw28^&1%pze',
 )
 
-# DEBUG=True muestra páginas de error detalladas. Solo para desarrollo.
-# Se apaga definiendo la variable de entorno DJANGO_DEBUG=False.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-# Dominios desde los que se puede abrir el sitio. split(',') convierte
-# 'localhost,127.0.0.1' en la lista ['localhost', '127.0.0.1'].
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    'localhost,127.0.0.1'
+).split(',')
 
 
 # =============================================================================
 # APLICACIONES
 # =============================================================================
-# Django solo usa las apps que están en esta lista.
 
 INSTALLED_APPS = [
-    # Apps que trae Django
-    'django.contrib.admin',          # panel /admin/
-    'django.contrib.auth',           # usuarios, contraseñas, login
-    'django.contrib.contenttypes',   # lo necesitan auth y admin
-    'django.contrib.sessions',       # sesiones (mantener al usuario conectado)
-    'django.contrib.messages',       # mensajes de una sola vez ("¡Cuenta creada!")
-    'django.contrib.staticfiles',    # archivos CSS y JavaScript
-    # Apps del proyecto
-    'despliegue',                    # la app del "Hola Mundo" original
-    'cuentas.apps.CuentasConfig',    # HU-01 Registro y HU-02 Inicio de sesión (clase de cuentas/apps.py)
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    # Aplicaciones del proyecto
+    'despliegue',
+    'cuentas.apps.CuentasConfig',
 ]
 
-# Middleware: capas por las que pasa CADA petición antes de llegar a la vista
-# (y cada respuesta al salir). El orden importa; se deja el de Django.
+
+# =============================================================================
+# MIDDLEWARE
+# =============================================================================
+
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',            # cabeceras de seguridad
-    'django.contrib.sessions.middleware.SessionMiddleware',     # carga la sesión desde la cookie
-    'django.middleware.common.CommonMiddleware',                # ajustes comunes de URLs
-    'django.middleware.csrf.CsrfViewMiddleware',                # exige token CSRF en los POST
-    'django.contrib.auth.middleware.AuthenticationMiddleware',  # pone request.user (usuario actual)
-    'cuentas.middleware.SinCachePrivadasMiddleware',            # HU-04: sin caché en páginas privadas
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # HU-04: evita almacenar en caché las páginas privadas.
+    'cuentas.middleware.SinCachePrivadasMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',     # habilita messages.success(...)
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',   # evita que el sitio se meta en un iframe ajeno
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 
-# Archivo con las rutas principales del proyecto.
+# =============================================================================
+# CONFIGURACIÓN GENERAL
+# =============================================================================
+
 ROOT_URLCONF = 'Sprint_1.urls'
 
-# Plantillas HTML.
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        # APP_DIRS=True: Django busca plantillas en la carpeta templates/ de
-        # cada app (por eso encuentra cuentas/templates/cuentas/login.html).
         'APP_DIRS': True,
         'OPTIONS': {
-            # Variables disponibles en TODAS las plantillas sin pasarlas a mano:
             'context_processors': [
-                'django.template.context_processors.request',            # {{ request }}
-                'django.contrib.auth.context_processors.auth',           # {{ user }}
-                'django.contrib.messages.context_processors.messages',   # {{ messages }}
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -111,12 +102,6 @@ WSGI_APPLICATION = 'Sprint_1.wsgi.application'
 # =============================================================================
 # BASE DE DATOS
 # =============================================================================
-# Por defecto SQLite (un archivo db.sqlite3; no hay que instalar nada).
-# Para usar PostgreSQL o MySQL basta con definir variables de entorno, sin
-# tocar el código. Ejemplo para PostgreSQL:
-#   DB_ENGINE=postgresql DB_NAME=sprint1 DB_USER=postgres DB_PASSWORD=... DB_PORT=5432
-# `python manage.py test` crea sola una BD independiente test_<DB_NAME> y la
-# borra al terminar (requisito del plan de pruebas, sección 3.2).
 
 DB_ENGINE = os.environ.get('DB_ENGINE', 'sqlite3')
 
@@ -124,18 +109,18 @@ if DB_ENGINE == 'sqlite3':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',     # archivo en la raíz del proyecto
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': f'django.db.backends.{DB_ENGINE}',   # postgresql | mysql
-            'NAME': os.environ.get('DB_NAME', 'sprint1'),   # nombre de la base de datos
-            'USER': os.environ.get('DB_USER', ''),          # usuario del motor
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),  # contraseña (nunca escrita en el código)
-            'HOST': os.environ.get('DB_HOST', 'localhost'), # servidor
-            'PORT': os.environ.get('DB_PORT', ''),          # puerto (vacío = el del motor)
+            'ENGINE': f'django.db.backends.{DB_ENGINE}',
+            'NAME': os.environ.get('DB_NAME', 'sprint1'),
+            'USER': os.environ.get('DB_USER', ''),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', ''),
         }
     }
 
@@ -144,37 +129,22 @@ else:
 # AUTENTICACIÓN (HU-01 / HU-02)
 # =============================================================================
 
-# Usar NUESTRO modelo de usuario (formato 'app.Modelo') en lugar del User de
-# Django. Debe definirse ANTES de la primera migración.
 AUTH_USER_MODEL = 'cuentas.Usuario'
 
-# Nombre de la ruta a la que @login_required manda a quien no tiene sesión (CA-02.6).
 LOGIN_URL = 'cuentas:login'
 
-# Ruta por defecto después de iniciar sesión (CA-02.5).
 LOGIN_REDIRECT_URL = 'cuentas:panel'
 
-# Algoritmo de hash de contraseñas (CA-01.7): PBKDF2-SHA256 con sal aleatoria
-# y 1.500.000 iteraciones. Es el que Django usa por defecto; se deja escrito
-# para que quede documentado. Nunca se guarda la contraseña en texto plano.
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
-# Reglas de contraseña: EXACTAMENTE las de CA-01.4. Se quitan dos validadores
-# que Django trae por defecto porque agregan reglas que el Product Owner no pidió:
-#   - CommonPasswordValidator rechaza "Abcd1234" (está en su lista de
-#     contraseñas comunes) y el caso CP-06 espera que sea ACEPTADA.
-#   - UserAttributeSimilarityValidator rechaza contraseñas parecidas al correo.
-# Django ejecuta esta lista en orden cada vez que se llama a validate_password().
 AUTH_PASSWORD_VALIDATORS = [
     {
-        # Regla 1: mínimo 8 caracteres (validador incluido en Django).
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {'min_length': 8},
     },
     {
-        # Reglas 2 a 4: mayúscula, minúscula y número (cuentas/validators.py).
         'NAME': 'cuentas.validators.ComplejidadContrasenaValidator',
     },
 ]
@@ -184,37 +154,35 @@ AUTH_PASSWORD_VALIDATORS = [
 # IDIOMA Y ZONA HORARIA
 # =============================================================================
 
-# Español de Colombia: traduce los mensajes propios de Django
-# (admin, "La contraseña es demasiado corta...").
 LANGUAGE_CODE = 'es-co'
 
-# Zona horaria de Colombia (UTC-5) para mostrar fechas y horas.
 TIME_ZONE = 'America/Bogota'
 
-USE_I18N = True     # activar traducciones
-USE_TZ = True       # guardar fechas en UTC y convertirlas a TIME_ZONE al mostrarlas
+USE_I18N = True
+USE_TZ = True
 
 
 # =============================================================================
-# ARCHIVOS ESTÁTICOS (CSS, JavaScript, imágenes)
+# ARCHIVOS ESTÁTICOS
 # =============================================================================
-# URL desde la que se sirven. Ej.: /static/cuentas/css/estilos.css
+
 STATIC_URL = 'static/'
 
 
 # =============================================================================
-# CORREO
+# CORREO ELECTRÓNICO (HU-03)
 # =============================================================================
-# Si EMAIL_HOST_USER está definido, se envía por SMTP (correo real).
-# Si no, se usa el backend de consola para desarrollo.
+
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 if EMAIL_HOST_USER:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 465
+    EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_TIMEOUT = 20
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 else:
     EMAIL_BACKEND = 'cuentas.correo_consola.EmailBackend'

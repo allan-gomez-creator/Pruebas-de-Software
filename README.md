@@ -1,3 +1,18 @@
+Montar base de datos local
+
+1- Ejecutar pip install django "psycopg[binary]" en la carpeta "pruebas-de-software"
+2- Autenticarse en psql
+3- Ejecutar los siguientes comando en la consola de postgres en orden
+3.1- CREATE DATABASE pruebas;
+3.2- \connect pruebas
+4- Ejecutar las migraciones con:
+4.1- python manage.py makemigrations
+4.2- python manage.py migrate 
+
+-----IMPORTANTE-----
+
+En el archivo settings.py, en el apartado de DATABASE tienen que cambiar la PASSWORD por su contraseña del usuario postgres
+
 Configuración del correo (HU-03: recuperar contraseña)
 
 El proyecto tiene dos modos de envío de correo. Se elige solo, según si existen las variables de entorno EMAIL_HOST_USER y EMAIL_HOST_PASSWORD. Nadie debe escribir contraseñas dentro del código ni subirlas a Git.
@@ -62,3 +77,5 @@ Nunca escribas la contraseña de aplicación en settings.py, en el chat ni en ca
 Nunca subas iniciar.bat ni archivos con contraseñas a Git.
 Si una contraseña se expone, revócala en https://myaccount.google.com/apppasswords y crea otra.
 Gmail sirve para pruebas y proyectos de clase (límite aproximado de 500 correos al día). En producción se usa un servicio transaccional como Brevo, SendGrid o Amazon SES.
+
+
