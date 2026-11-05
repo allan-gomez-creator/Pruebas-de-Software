@@ -1,0 +1,37 @@
+{# cuentas/templates/cuentas/login.html — PÁGINA DE INICIO DE SESIÓN (HU-02). #}
+{# La dibuja la vista "iniciar_sesion" con {{ form }} (un InicioSesionForm) #}
+{# y {{ next }} (la página privada a la que se quería entrar, si la hay). #}
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Iniciar sesión{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta" aria-labelledby="titulo-login">
+  <p class="etiqueta">HU-02</p>
+  <h1 id="titulo-login">Inicia sesión</h1>
+  <p class="subtitulo">Ingresa con tu correo y contraseña para acceder a tu área privada.</p>
+
+  {# Aviso amarillo cuando llegó aquí redirigido desde una página privada (CA-02.6). #}
+  {# form.is_bound es True si el formulario ya se envió; el aviso solo sale en la primera visita #}
+  {% if next and not form.is_bound %}
+    <div class="aviso" role="note">Debes iniciar sesión para ver esa página.</div>
+  {% endif %}
+
+  {# Mensaje genérico de credenciales inválidas (CA-02.3), lanzado en InicioSesionForm.clean() #}
+  {% if form.non_field_errors %}
+    <div class="alerta" role="alert">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {# Campo oculto: conserva "next" para volver a esa página después del login #}
+    <input type="hidden" name="next" value="{{ next }}">
+    {# CA-02.1: correo y contraseña #}
+    {% include 'cuentas/_campo.html' with campo=form.email %}
+    {% include 'cuentas/_campo.html' with campo=form.password %}
+    <button type="submit" class="boton">Iniciar sesión</button>
+  </form>
+
+  <p class="alterno">¿No tienes cuenta? <a href="{% url 'cuentas:registro' %}">Regístrate</a></p>
+    <p class="alterno"><a href="{% url 'cuentas:recuperar' %}">¿Olvidaste tu contraseña?</a></p>
+</section>
+{% endblock %}

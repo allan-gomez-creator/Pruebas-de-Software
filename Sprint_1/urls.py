@@ -1,25 +1,26 @@
-"""
-URL configuration for Sprint_1 project.
+# Sprint_1/urls.py — RUTAS PRINCIPALES del proyecto.
+# Django revisa esta lista de arriba a abajo y usa la primera ruta que
+# coincida con la URL que pidió el navegador.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path
-from despliegue import views
+from django.urls import include, path
+from django.views.generic import RedirectView     # vista lista para hacer redirecciones
+
+from despliegue import views                      # vistas del "Hola Mundo" original
 
 urlpatterns = [
+    # Panel de administración de Django.
     path('admin/', admin.site.urls),
-    path('', views.hello),
+
+    # Todo lo que empiece por /cuentas/ lo resuelve cuentas/urls.py
+    # (módulo de autenticación: HU-01, HU-02 y las siguientes).
+    path('cuentas/', include('cuentas.urls')),
+
+    # La raíz (http://127.0.0.1:8000/) redirige al inicio de sesión.
+    # permanent=False -> redirección temporal (302), el navegador no la memoriza.
+    path('', RedirectView.as_view(pattern_name='cuentas:login', permanent=False)),
+
+    # Páginas de ejemplo del framework original (se movió el "Hola Mundo" a /hola/).
+    path('hola/', views.hello),
     path('about/', views.about),
 ]
