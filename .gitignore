@@ -19,3 +19,11 @@ db.sqlite3
 # Configuración personal de los editores
 .vscode/
 .idea/
+
+*.pyc
+iniciar.bat
+
+# Reportes de cobertura (Sprint 3)
+.coverage
+htmlcov/
+coverage/

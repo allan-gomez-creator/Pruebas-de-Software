@@ -1,10 +1,11 @@
-# Pruebas de Software — Módulo de Autenticación (HU-01, HU-02 y HU-05)
+# Pruebas de Software — Módulo de Autenticación y Organizador de Tareas (Sprints 1, 2 y 3)
 
-Repositorio unificado que integra la configuración de base de datos de la rama `master` con el backend de autenticación de `feature/hu01-hu02-autenticacion` e implementa la **Historia de Usuario 5 (HU-05: Límite de intentos de autenticación fallidos)**.
+Repositorio unificado que integra la configuración de base de datos de la rama `master` con el módulo de autenticación (`HU-01` a `HU-05`) y el módulo de gestión de tareas y calendario del **Sprint 3**.
 
 ---
 
-En el archivo settings.py, en el apartado de DATABASE tienen que cambiar la PASSWORD por su contraseña del usuario postgres
+En el archivo `Sprint_1/settings.py`, en el apartado de `DATABASES` puedes definir las credenciales de tu usuario `postgres` o usar variables de entorno.
+
 Configuración del correo (HU-03: recuperar contraseña)
 
 El proyecto tiene dos modos de envío de correo. Se elige solo, según si existen las variables de entorno EMAIL_HOST_USER y EMAIL_HOST_PASSWORD. Nadie debe escribir contraseñas dentro del código ni subirlas a Git.
@@ -106,9 +107,9 @@ Gmail sirve para pruebas y proyectos de clase (límite aproximado de 500 correos
   - Registro (`HU-01`): `http://127.0.0.1:8000/cuentas/registro/`
   - Inicio de sesión y control de intentos (`HU-02` y `HU-05`): `http://127.0.0.1:8000/cuentas/login/`
   - Área privada (`HU-02`): `http://127.0.0.1:8000/cuentas/panel/`
-  - Panel de administración (evidencia de tablas `Usuario` e `IntentoAcceso`): `http://127.0.0.1:8000/admin/`
+  - Panel de administración (evidencia de tablas `Usuario`, `IntentoAcceso` y `Tarea`): `http://127.0.0.1:8000/admin/`
 
-- **Ejecutar suite de pruebas automatizadas (`HU-01`, `HU-02` y `HU-05`):**
+- **Ejecutar suite de pruebas automatizadas:**
   ```bash
   python manage.py test -v 2
   ```
