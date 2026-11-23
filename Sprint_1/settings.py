@@ -202,4 +202,4 @@ else:
     EMAIL_BACKEND = 'cuentas.correo_consola.EmailBackend'
     DEFAULT_FROM_EMAIL = 'no-reply@tudominio.com'
 
-ALTER USER postgres WITH PASSWORD '123456'
+# ALTER USER postgres WITH PASSWORD '123456'
