@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from .forms import TareaForm
 from .models import EstadoTarea, Tarea
+from .views import _mes_anterior_y_siguiente
 
 Usuario = get_user_model()
 CLAVE = "Prueba2026Ok"
@@ -71,18 +72,23 @@ class TareaFormTests(TestCase):
 class AccesoSinSesionTests(TestCase):
     def test_visitante_redirigido_al_login(self):  # CA-09
         tarea = crear_tarea(Usuario.objects.create_user("a@test.local", "Ana", CLAVE))
-        urls = [reverse("tareas:lista"), reverse("tareas:crear"),
+        urls = [reverse("tareas:lista"), reverse("tareas:calendario"),
+                reverse("tareas:crear"),
                 reverse("tareas:detalle", args=[tarea.pk]),
+                reverse("tareas:editar", args=[tarea.pk]),
                 reverse("tareas:eliminar", args=[tarea.pk])]
         for url in urls:
             r = self.client.get(url)
             self.assertRedirects(r, f"{reverse('cuentas:login')}?next={url}", msg_prefix=url)
 
-    def test_visitante_no_puede_crear_ni_eliminar(self):  # CA-09
+    def test_visitante_no_puede_crear_editar_ni_eliminar(self):  # CA-09
         tarea = crear_tarea(Usuario.objects.create_user("a@test.local", "Ana", CLAVE))
         self.client.post(reverse("tareas:crear"), datos())
+        self.client.post(reverse("tareas:editar", args=[tarea.pk]), datos(nombre="Hackeada"))
         self.client.post(reverse("tareas:eliminar", args=[tarea.pk]))
         self.assertEqual(Tarea.objects.count(), 1)
+        tarea.refresh_from_db()
+        self.assertEqual(tarea.nombre, "Tarea base")
 
 
 @RAPIDO
@@ -122,7 +128,7 @@ class CrearTareaTests(TestCase):
 
 
 @RAPIDO
-class LeerTareasTests(TestCase):
+class LeerTareasYCalendarioTests(TestCase):
     def setUp(self):
         self.ana = Usuario.objects.create_user("a@test.local", "Ana", CLAVE)
         self.luis = Usuario.objects.create_user("l@test.local", "Luis", CLAVE)
@@ -132,6 +138,35 @@ class LeerTareasTests(TestCase):
         crear_tarea(self.ana, nombre="Estudiar Django")
         r = self.client.get(reverse("tareas:lista"))
         self.assertContains(r, "Estudiar Django")
+
+    def test_tarea_aparece_en_listado_y_calendario_en_rango_de_fechas(self):  # CA-03
+        tarea = crear_tarea(
+            self.ana,
+            nombre="Sprint Review",
+            fecha_inicio=date(2026, 11, 20),
+            fecha_fin=date(2026, 11, 22),
+            estado=EstadoTarea.EN_PROGRESO,
+        )
+        for nombre_url in ("tareas:lista", "tareas:calendario"):
+            r = self.client.get(reverse(nombre_url), {"anio": 2026, "mes": 11})
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Sprint Review")
+            # Aparece en cada día dentro del rango 20..22 de noviembre
+            for dia in ("2026-11-20", "2026-11-21", "2026-11-22"):
+                self.assertContains(r, f'data-evento-fecha="{dia}"')
+            # No aparece fuera del rango (19 ni 23 de noviembre)
+            self.assertNotContains(r, 'data-evento-fecha="2026-11-19"')
+            self.assertNotContains(r, 'data-evento-fecha="2026-11-23"')
+            self.assertContains(r, f'data-tarea-id="{tarea.pk}"')
+
+    def test_calendario_sin_tareas_usa_mes_actual_y_maneja_parametros_invalidos(self):
+        r = self.client.get(reverse("tareas:calendario"), {"anio": "invalido", "mes": "99"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Calendario")
+
+    def test_mes_anterior_y_siguiente_cambio_de_anio(self):
+        self.assertEqual(_mes_anterior_y_siguiente(2026, 1), ((2025, 12), (2026, 2)))
+        self.assertEqual(_mes_anterior_y_siguiente(2026, 12), ((2026, 11), (2027, 1)))
 
     def test_listado_solo_muestra_tareas_propias(self):
         crear_tarea(self.ana, nombre="De Ana")
@@ -153,6 +188,88 @@ class LeerTareasTests(TestCase):
 
     def test_detalle_inexistente_da_404(self):  # CA-12
         self.assertEqual(self.client.get(reverse("tareas:detalle", args=[9999])).status_code, 404)
+
+
+@RAPIDO
+class EditarTareaTests(TestCase):
+    def setUp(self):
+        self.ana = Usuario.objects.create_user("a@test.local", "Ana", CLAVE)
+        self.luis = Usuario.objects.create_user("l@test.local", "Luis", CLAVE)
+        self.client.force_login(self.ana)
+        self.tarea = crear_tarea(
+            self.ana,
+            nombre="Tarea original",
+            descripcion="Descripcion inicial",
+            fecha_inicio=date(2026, 11, 10),
+            fecha_fin=date(2026, 11, 12),
+            estado=EstadoTarea.PENDIENTE,
+        )
+        self.url = reverse("tareas:editar", args=[self.tarea.pk])
+
+    def test_get_muestra_formulario_precargado(self):  # CA-05
+        r = self.client.get(self.url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Editar tarea")
+        self.assertContains(r, "Tarea original")
+        self.assertContains(r, "Descripcion inicial")
+
+    def test_modificar_nombre_descripcion_fechas_y_estado_se_refleja_en_listado_y_calendario(self):  # CA-05 y CA-06
+        nuevos_datos = {
+            "nombre": "Tarea actualizada",
+            "descripcion": "Nueva descripcion detallada",
+            "fecha_inicio": "2026-11-15",
+            "fecha_fin": "2026-11-17",
+            "estado": EstadoTarea.COMPLETADA,
+        }
+        r = self.client.post(self.url, nuevos_datos)
+        self.assertRedirects(r, reverse("tareas:lista"))
+
+        # CA-05: Verificar cambios persistidos en la base de datos
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.nombre, "Tarea actualizada")
+        self.assertEqual(self.tarea.descripcion, "Nueva descripcion detallada")
+        self.assertEqual(self.tarea.fecha_inicio, date(2026, 11, 15))
+        self.assertEqual(self.tarea.fecha_fin, date(2026, 11, 17))
+        self.assertEqual(self.tarea.estado, EstadoTarea.COMPLETADA)
+
+        # CA-06: Los cambios guardados se reflejan en el listado y en el calendario
+        r_lista = self.client.get(reverse("tareas:lista"), {"anio": 2026, "mes": 11})
+        self.assertContains(r_lista, "Tarea actualizada")
+        self.assertNotContains(r_lista, "Tarea original")
+        self.assertContains(r_lista, "15/11/2026")
+        self.assertContains(r_lista, "17/11/2026")
+        self.assertContains(r_lista, "Completada")
+
+        # En el calendario aparece ahora en el nuevo rango 15..17 y ya no en el antiguo 10..12
+        for dia_nuevo in ("2026-11-15", "2026-11-16", "2026-11-17"):
+            self.assertContains(r_lista, f'data-evento-fecha="{dia_nuevo}"')
+        for dia_antiguo in ("2026-11-10", "2026-11-11", "2026-11-12"):
+            self.assertNotContains(r_lista, f'data-evento-fecha="{dia_antiguo}"')
+
+        r_cal = self.client.get(reverse("tareas:calendario"), {"anio": 2026, "mes": 11})
+        self.assertContains(r_cal, "Tarea actualizada")
+        for dia_nuevo in ("2026-11-15", "2026-11-16", "2026-11-17"):
+            self.assertContains(r_cal, f'data-evento-fecha="{dia_nuevo}"')
+
+    def test_editar_con_datos_invalidos_no_modifica(self):  # CA-02 y CA-05
+        r = self.client.post(
+            self.url,
+            datos(nombre="", fecha_inicio="2026-11-25", fecha_fin="2026-11-20"),
+        )
+        self.assertEqual(r.status_code, 200)
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.nombre, "Tarea original")
+
+    def test_no_puede_editar_tarea_de_otro_usuario(self):
+        ajena = crear_tarea(self.luis, nombre="De Luis")
+        r = self.client.post(reverse("tareas:editar", args=[ajena.pk]), datos(nombre="Intruso"))
+        self.assertEqual(r.status_code, 404)
+        ajena.refresh_from_db()
+        self.assertEqual(ajena.nombre, "De Luis")
+
+    def test_editar_inexistente_da_404(self):  # CA-12
+        self.assertEqual(self.client.get(reverse("tareas:editar", args=[9999])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("tareas:editar", args=[9999]), datos()).status_code, 404)
 
 
 @RAPIDO

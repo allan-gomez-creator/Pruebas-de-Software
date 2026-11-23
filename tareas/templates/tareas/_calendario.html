@@ -1,0 +1,50 @@
+<div class="calendario-seccion" id="calendario-tareas" aria-labelledby="titulo-calendario">
+  <div class="calendario-cabecera">
+    <h2 class="calendario-titulo" id="titulo-calendario">
+      Calendario · {{ calendario.nombre_mes }} {{ calendario.anio }}
+    </h2>
+    <div class="calendario-nav" aria-label="Navegación del calendario">
+      <a href="?anio={{ calendario.ant_anio }}&amp;mes={{ calendario.ant_mes }}">← Mes anterior</a>
+      <a href="?anio={{ calendario.hoy.year }}&amp;mes={{ calendario.hoy.month }}">Hoy</a>
+      <a href="?anio={{ calendario.sig_anio }}&amp;mes={{ calendario.sig_mes }}">Mes siguiente →</a>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="calendario-tabla" aria-label="Calendario de tareas de {{ calendario.nombre_mes }} {{ calendario.anio }}">
+      <thead>
+        <tr>
+          {% for nombre_dia in calendario.dias_semana %}
+          <th scope="col">{{ nombre_dia }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for semana in calendario.semanas %}
+        <tr>
+          {% for celda in semana %}
+          <td class="calendario-dia{% if not celda.en_mes %} calendario-dia-fuera{% endif %}{% if celda.es_hoy %} calendario-dia-hoy{% endif %}"
+              data-fecha="{{ celda.fecha|date:'Y-m-d' }}">
+            <div class="calendario-numero">{{ celda.dia }}</div>
+            {% if celda.tareas %}
+            <div class="calendario-eventos">
+              {% for t in celda.tareas %}
+              <a href="{% url 'tareas:detalle' t.pk %}"
+                 class="calendario-evento {% if t.estado == 'Completada' %}calendario-evento-completada{% elif t.estado == 'En progreso' %}calendario-evento-progreso{% else %}calendario-evento-pendiente{% endif %}"
+                 data-evento-fecha="{{ celda.fecha|date:'Y-m-d' }}"
+                 data-tarea-id="{{ t.pk }}"
+                 data-tarea-estado="{{ t.estado }}"
+                 title="{{ t.nombre }} ({{ t.fecha_inicio|date:'d/m/Y' }} - {{ t.fecha_fin|date:'d/m/Y' }}) · {{ t.estado }}">
+                {{ t.nombre }}
+              </a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -11,8 +11,9 @@
     <div><dt>Fecha de fin</dt><dd>{{ tarea.fecha_fin|date:"d/m/Y" }}</dd></div>
     <div><dt>Estado</dt><dd>{{ tarea.estado }}</dd></div>
   </dl>
-  <p>
+  <p style="margin-top:18px;">
     <a href="{% url 'tareas:lista' %}">Volver al listado</a> ·
+    <a href="{% url 'tareas:editar' tarea.pk %}">Editar</a> ·
     <a href="{% url 'tareas:eliminar' tarea.pk %}">Eliminar</a>
   </p>
 </section>

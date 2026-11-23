@@ -75,6 +75,7 @@ a:hover { color: var(--acento-hover); }
 }
 /* Si la página tiene una tarjeta ancha (el panel), el contenido se ensancha */
 .contenido:has(.tarjeta-ancha) { max-width: 640px; }
+.contenido:has(.tarjeta-calendario) { max-width: 960px; }
 
 /* Tarjeta blanca que contiene cada formulario */
 .tarjeta {
@@ -103,7 +104,7 @@ h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
 /* ---------- Campos de formulario ---------- */
 .campo { margin-bottom: 18px; }
 .campo label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
-.campo input {
+.campo input, .campo textarea, .campo select {
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--borde);
@@ -113,9 +114,11 @@ h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
   font: inherit;           /* usa la misma fuente de la página */
 }
 /* Contorno verde cuando el campo está activo (accesibilidad con teclado) */
-.campo input:focus { outline: 2px solid var(--acento); outline-offset: 1px; border-color: var(--acento); }
+.campo input:focus, .campo textarea:focus, .campo select:focus { outline: 2px solid var(--acento); outline-offset: 1px; border-color: var(--acento); }
 /* Campo con error: borde y fondo rojos (clase campo-error o aria-invalid que pone Django) */
-.campo-error input, .campo input[aria-invalid="true"] { border-color: var(--error); background: var(--error-suave); }
+.campo-error input, .campo input[aria-invalid="true"],
+.campo-error textarea, .campo textarea[aria-invalid="true"],
+.campo-error select, .campo select[aria-invalid="true"] { border-color: var(--error); background: var(--error-suave); }
 /* Contenedor de contraseña: el botón "Ver" se posiciona encima del input, a la derecha */
 .campo-password { position: relative; }
 .campo-password input { padding-right: 64px; }   /* espacio para que el texto no quede debajo del botón */
@@ -175,6 +178,46 @@ h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
 .datos dd { margin: 0; font-weight: 500; word-break: break-word; }   /* correos largos no se salen */
 
 .pie { padding: 20px 16px; text-align: center; font-size: 13px; color: var(--tinta-suave); }
+
+/* ---------- Listado de tareas y Calendario (Sprint 3) ---------- */
+.acciones-barra { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.tabla-tareas { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 15px; }
+.tabla-tareas th, .tabla-tareas td { padding: 10px 8px; border-bottom: 1px solid var(--borde); text-align: left; vertical-align: middle; }
+.tabla-tareas th { font-size: 13px; color: var(--tinta-suave); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.badge-estado { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.badge-pendiente { background: var(--aviso-suave); color: #7a5a00; }
+.badge-progreso { background: #e0f2fe; color: #0369a1; }
+.badge-completada { background: var(--acento-suave); color: var(--acento); }
+
+.calendario-seccion { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--borde); }
+.calendario-cabecera { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.calendario-titulo { margin: 0; font-size: 20px; font-weight: 700; }
+.calendario-nav { display: flex; align-items: center; gap: 8px; }
+.calendario-nav a { text-decoration: none; padding: 6px 12px; border: 1px solid var(--borde); border-radius: 8px; font-size: 14px; color: var(--tinta); background: var(--superficie); }
+.calendario-nav a:hover { background: var(--fondo); }
+
+.calendario-tabla { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.calendario-tabla th { padding: 8px 4px; text-align: center; font-size: 13px; color: var(--tinta-suave); border-bottom: 1px solid var(--borde); }
+.calendario-dia { height: 96px; vertical-align: top; padding: 6px; border: 1px solid var(--borde); background: #fff; }
+.calendario-dia-fuera { background: var(--fondo); color: var(--tinta-suave); opacity: 0.65; }
+.calendario-dia-hoy { background: #fafdfb; box-shadow: inset 0 0 0 2px var(--acento); }
+.calendario-numero { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--tinta-suave); }
+.calendario-dia-hoy .calendario-numero { color: var(--acento); font-weight: 700; }
+.calendario-eventos { display: flex; flex-direction: column; gap: 3px; }
+.calendario-evento {
+  display: block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.calendario-evento-pendiente { background: var(--aviso-suave); color: #7a5a00; border-left: 3px solid #d97706; }
+.calendario-evento-progreso { background: #e0f2fe; color: #0369a1; border-left: 3px solid #0284c7; }
+.calendario-evento-completada { background: var(--acento-suave); color: var(--acento); border-left: 3px solid var(--acento); }
 
 /* ---------- Pantallas pequeñas (celular) ----------
    Estas reglas solo aplican si la pantalla mide 520px de ancho o menos. */

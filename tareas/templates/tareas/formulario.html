@@ -1,9 +1,10 @@
 {% extends 'cuentas/base.html' %}
-{% block titulo %}Nueva tarea{% endblock %}
+{% block titulo %}{% if modo_edicion %}Editar tarea{% else %}Nueva tarea{% endif %}{% endblock %}
 
 {% block contenido %}
 <section class="tarjeta" aria-labelledby="titulo-form">
-  <h1 id="titulo-form">Nueva tarea</h1>
+  <p class="etiqueta etiqueta-privada">{% if modo_edicion %}Modificar tarea{% else %}Organizador de tareas{% endif %}</p>
+  <h1 id="titulo-form">{% if modo_edicion %}Editar tarea{% else %}Nueva tarea{% endif %}</h1>
   <form method="post" novalidate>
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -14,8 +15,10 @@
     {% include 'cuentas/_campo.html' with campo=form.fecha_inicio %}
     {% include 'cuentas/_campo.html' with campo=form.fecha_fin %}
     {% include 'cuentas/_campo.html' with campo=form.estado %}
-    <button type="submit" class="nav-boton">Guardar tarea</button>
-    <a href="{% url 'tareas:lista' %}">Cancelar</a>
+    <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+      <button type="submit" class="nav-boton">{% if modo_edicion %}Guardar cambios{% else %}Guardar tarea{% endif %}</button>
+      <a href="{% url 'tareas:lista' %}">Cancelar</a>
+    </div>
   </form>
 </section>
 {% endblock %}

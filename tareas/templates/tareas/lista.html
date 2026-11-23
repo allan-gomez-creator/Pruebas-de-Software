@@ -2,28 +2,38 @@
 {% block titulo %}Mis tareas{% endblock %}
 
 {% block contenido %}
-<section class="tarjeta tarjeta-ancha" aria-labelledby="titulo-tareas">
+<section class="tarjeta tarjeta-calendario" aria-labelledby="titulo-tareas">
   <p class="etiqueta etiqueta-privada">Organizador de tareas</p>
-  <h1 id="titulo-tareas">Mis tareas</h1>
-  <p><a class="nav-boton" href="{% url 'tareas:crear' %}">Nueva tarea</a></p>
+  <div class="acciones-barra">
+    <h1 id="titulo-tareas" style="margin:0;">Mis tareas</h1>
+    <div style="display:flex; gap:8px;">
+      <a class="nav-boton" href="{% url 'tareas:calendario' %}">Ver calendario</a>
+      <a class="nav-boton" href="{% url 'tareas:crear' %}">Nueva tarea</a>
+    </div>
+  </div>
 
   {% if tareas %}
   <div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse;">
+    <table class="tabla-tareas" id="listado-tareas">
       <thead>
-        <tr style="text-align:left;">
+        <tr>
           <th>Nombre</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for tarea in tareas %}
-        <tr>
+        <tr data-tarea-fila="{{ tarea.pk }}">
           <td><a href="{% url 'tareas:detalle' tarea.pk %}">{{ tarea.nombre }}</a></td>
           <td>{{ tarea.fecha_inicio|date:"d/m/Y" }}</td>
           <td>{{ tarea.fecha_fin|date:"d/m/Y" }}</td>
-          <td>{{ tarea.estado }}</td>
+          <td>
+            <span class="badge-estado {% if tarea.estado == 'Completada' %}badge-completada{% elif tarea.estado == 'En progreso' %}badge-progreso{% else %}badge-pendiente{% endif %}">
+              {{ tarea.estado }}
+            </span>
+          </td>
           <td>
             <a href="{% url 'tareas:detalle' tarea.pk %}">Ver</a> ·
+            <a href="{% url 'tareas:editar' tarea.pk %}">Editar</a> ·
             <a href="{% url 'tareas:eliminar' tarea.pk %}">Eliminar</a>
           </td>
         </tr>
@@ -34,5 +44,7 @@
   {% else %}
   <p class="subtitulo">Aún no tienes tareas. Crea la primera con el botón "Nueva tarea".</p>
   {% endif %}
+
+  {% include 'tareas/_calendario.html' %}
 </section>
 {% endblock %}

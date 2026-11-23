@@ -1,0 +1,17 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Calendario de tareas{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta tarjeta-calendario" aria-labelledby="titulo-vista-calendario">
+  <p class="etiqueta etiqueta-privada">Organizador de tareas</p>
+  <div class="acciones-barra">
+    <h1 id="titulo-vista-calendario" style="margin:0;">Calendario de tareas</h1>
+    <div style="display:flex; gap:8px;">
+      <a class="nav-boton" href="{% url 'tareas:lista' %}">Ver listado</a>
+      <a class="nav-boton" href="{% url 'tareas:crear' %}">Nueva tarea</a>
+    </div>
+  </div>
+
+  {% include 'tareas/_calendario.html' %}
+</section>
+{% endblock %}
