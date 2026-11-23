@@ -1,0 +1,21 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Nueva tarea{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta" aria-labelledby="titulo-form">
+  <h1 id="titulo-form">Nueva tarea</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+    {% endif %}
+    {% include 'cuentas/_campo.html' with campo=form.nombre %}
+    {% include 'cuentas/_campo.html' with campo=form.descripcion %}
+    {% include 'cuentas/_campo.html' with campo=form.fecha_inicio %}
+    {% include 'cuentas/_campo.html' with campo=form.fecha_fin %}
+    {% include 'cuentas/_campo.html' with campo=form.estado %}
+    <button type="submit" class="nav-boton">Guardar tarea</button>
+    <a href="{% url 'tareas:lista' %}">Cancelar</a>
+  </form>
+</section>
+{% endblock %}

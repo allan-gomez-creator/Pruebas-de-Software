@@ -1,0 +1,19 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}{{ tarea.nombre }}{% endblock %}
+
+{% block contenido %}
+<section class="tarjeta tarjeta-ancha" aria-labelledby="titulo-detalle">
+  <p class="etiqueta etiqueta-privada">Detalle de la tarea</p>
+  <h1 id="titulo-detalle">{{ tarea.nombre }}</h1>
+  <dl class="datos">
+    <div><dt>Descripción</dt><dd>{{ tarea.descripcion|default:"Sin descripción" }}</dd></div>
+    <div><dt>Fecha de inicio</dt><dd>{{ tarea.fecha_inicio|date:"d/m/Y" }}</dd></div>
+    <div><dt>Fecha de fin</dt><dd>{{ tarea.fecha_fin|date:"d/m/Y" }}</dd></div>
+    <div><dt>Estado</dt><dd>{{ tarea.estado }}</dd></div>
+  </dl>
+  <p>
+    <a href="{% url 'tareas:lista' %}">Volver al listado</a> ·
+    <a href="{% url 'tareas:eliminar' tarea.pk %}">Eliminar</a>
+  </p>
+</section>
+{% endblock %}
