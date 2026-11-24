@@ -226,3 +226,92 @@ h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
   .datos div { grid-template-columns: 1fr; gap: 2px; }        /* dato y valor uno debajo del otro */
   .requisitos { grid-template-columns: 1fr; }                 /* requisitos en una sola columna */
 }
+
+/* =============================================================================
+   Mejora visual del listado y del calendario (Sprint 3)
+   ============================================================================= */
+
+/* Pagina mas ancha cuando hay calendario (listado y vista de calendario) */
+.contenido:has(.calendario-seccion) { max-width: 1080px; }
+
+/* Botones y enlaces de accion dentro de las tarjetas */
+.tarjeta .nav-boton {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.tarjeta .nav-boton:hover { background: var(--acento-hover); color: #fff; }
+
+/* Tabla del listado de tareas */
+.tarjeta table:not(.calendario-tabla) { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 15px; }
+.tarjeta table:not(.calendario-tabla) th,
+.tarjeta table:not(.calendario-tabla) td { padding: 10px 8px; border-bottom: 1px solid var(--borde); text-align: left; vertical-align: middle; }
+.tarjeta table:not(.calendario-tabla) th { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---------- Calendario ---------- */
+.calendario-seccion { margin-top: 32px; padding-top: 24px; }
+.calendario-titulo { font-size: 22px; letter-spacing: -.01em; }
+
+.calendario-nav { gap: 0; border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; background: var(--superficie); }
+.calendario-nav a { border: 0; border-radius: 0; padding: 8px 14px; font-weight: 600; }
+.calendario-nav a + a { border-left: 1px solid var(--borde); }
+.calendario-nav a:hover { background: var(--acento-suave); color: var(--acento); }
+
+.calendario-tabla {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.calendario-tabla th {
+  padding: 10px 4px;
+  background: var(--fondo);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--borde);
+}
+.calendario-dia {
+  height: 118px;
+  padding: 8px;
+  border: 0;
+  border-right: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  transition: background .15s;
+}
+.calendario-tabla tr td:last-child { border-right: 0; }
+.calendario-tabla tbody tr:last-child td { border-bottom: 0; }
+.calendario-dia:nth-child(6), .calendario-dia:nth-child(7) { background: #fcfbf9; }
+.calendario-dia:hover { background: var(--acento-suave); }
+.calendario-dia-fuera, .calendario-dia-fuera:hover { background: var(--fondo); opacity: .55; }
+
+/* Numero del dia; el de hoy va en un circulo verde */
+.calendario-numero { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; margin-bottom: 6px; border-radius: 50%; font-size: 13px; }
+.calendario-dia-hoy, .calendario-dia-hoy:hover { background: #f3faf6; box-shadow: none; }
+.calendario-dia-hoy .calendario-numero { background: var(--acento); color: #fff; }
+
+/* Tareas como etiquetas de color */
+.calendario-eventos { gap: 4px; }
+.calendario-evento { padding: 3px 8px; border-radius: 6px; font-size: 12px; transition: transform .1s, box-shadow .1s; }
+.calendario-evento:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(29, 35, 33, .15); }
+.calendario-evento-pendiente { background: #fff1cc; color: #7a5a00; border-left: 4px solid #d97706; }
+.calendario-evento-progreso { background: #dbeefc; color: #0369a1; border-left: 4px solid #0284c7; }
+.calendario-evento-completada { background: #d8ece2; color: var(--acento); border-left: 4px solid var(--acento); }
+
+/* Celular: la cuadricula se desplaza en horizontal en lugar de aplastarse */
+@media (max-width: 700px) {
+  .calendario-tabla { min-width: 600px; }
+  .calendario-dia { height: 88px; padding: 4px; }
+  .calendario-evento { padding: 2px 5px; font-size: 11px; }
+  .calendario-cabecera { justify-content: center; }
+}
