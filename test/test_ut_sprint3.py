@@ -1,11 +1,16 @@
 """
 test/test_ut_sprint3.py — PRUEBAS UNITARIAS DE CAJA BLANCA · SPRINT 3 (Gestión de tareas).
 
-Métodos probados (4):
-  M1. TareaForm.clean()                 tareas/forms.py   Validación de fechas al crear/editar.
-  M2. _obtener_anio_mes()               tareas/views.py   Qué mes muestra el calendario.
-  M3. construir_calendario_mensual()    tareas/views.py   Arma la cuadrícula del mes con las tareas.
-  M4. eliminar_tarea()                  tareas/views.py   Borrado de una tarea (confirmación y POST).
+Métodos probados (8), organizados por operación del CRUD:
+  CREAR       M5. crear_tarea()                    tareas/views.py
+  LEER        M6. listar_tareas()                  tareas/views.py
+              M7. detalle_tarea()                  tareas/views.py
+              M2. _obtener_anio_mes()              tareas/views.py   Qué mes muestra el calendario.
+              M3. construir_calendario_mensual()   tareas/views.py   Cuadrícula del mes con las tareas.
+  ACTUALIZAR  M8. editar_tarea()                   tareas/views.py
+  ELIMINAR    M4. eliminar_tarea()                 tareas/views.py
+  CREAR y ACTUALIZAR comparten la validación:
+              M1. TareaForm.clean()                tareas/forms.py   Fecha de fin >= fecha de inicio.
 
 Técnica: caja blanca por CAMINOS BÁSICOS (McCabe). Para cada método se dibujó su
 grafo de flujo, se calculó la complejidad ciclomática V(G) y se escribió una
@@ -15,7 +20,7 @@ Cada prueba indica en su docstring el camino que recorre (C1, C2, ...).
 Aislamiento:
   - M2 y M3 no usan base de datos: la petición se crea con RequestFactory, las
     tareas son objetos falsos y el reloj ("hoy") se reemplaza por una fecha fija.
-  - M1 y M4 usan la base de datos de PRUEBA que pytest crea y borra sola
+  - M1, M4, M5, M6, M7 y M8 usan la base de datos de PRUEBA que pytest crea y borra sola
     (marca django_db). Nunca tocan la base de datos real del proyecto.
 
 Ejecutar:   pytest test/test_ut_sprint3.py -v
@@ -396,6 +401,252 @@ def test_ut40_eliminar_con_post_borra_y_redirige(client, usuarios, tarea):
     assert not Tarea.objects.filter(pk=tarea.pk).exists()
     mensajes = [str(m) for m in get_messages(respuesta.wsgi_request)]
     assert mensajes == ['Tarea "Estudiar" eliminada.']
+
+
+# =============================================================================
+# M5 · crear_tarea()  (CREAR)  —  V(G) = 5  →  5 caminos
+# =============================================================================
+
+@pytest.mark.django_db
+def test_ut42_crear_sin_sesion_redirige_al_login(client):
+    """UT-42 · Camino C1 (1-2-10): @login_required corta antes de la vista (CA-09)."""
+    # Arrange
+    url = reverse('tareas:crear')
+    # Act
+    respuesta = client.post(url, datos_tarea())
+    # Assert
+    assert respuesta.status_code == 302
+    assert reverse('cuentas:login') in respuesta['Location']
+    assert Tarea.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ut43_crear_con_metodo_no_permitido_da_405(client, usuarios):
+    """UT-43 · Camino C2 (1-3-4-10): @require_http_methods solo deja GET y POST."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.put(reverse('tareas:crear'))
+    # Assert
+    assert respuesta.status_code == 405
+    assert Tarea.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ut44_crear_con_get_muestra_formulario_vacio(client, usuarios):
+    """UT-44 · Camino C3 (1-3-5-6-9-10): GET → la condición `request.method == 'POST'`
+    es falsa; se muestra el formulario vacío y no se crea nada."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.get(reverse('tareas:crear'))
+    # Assert
+    assert respuesta.status_code == 200
+    assert 'tareas/formulario.html' in [t.name for t in respuesta.templates]
+    assert respuesta.context['modo_edicion'] is False
+    assert respuesta.context['form'].is_bound is False
+    assert Tarea.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ut45_crear_con_datos_invalidos_no_guarda(client, usuarios):
+    """UT-45 · Camino C4 (1-3-5-6-7-9-10): POST pero `form.is_valid()` es falso
+    (nombre vacío). Se vuelve a mostrar el formulario con el error (CA-02)."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.post(reverse('tareas:crear'), datos_tarea(nombre=''))
+    # Assert
+    assert respuesta.status_code == 200
+    assert 'nombre' in respuesta.context['form'].errors
+    assert Tarea.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ut46_crear_con_datos_validos_guarda_para_el_usuario(client, usuarios):
+    """UT-46 · Camino C5 (1-3-5-6-7-8-10): POST válido → se guarda con los 5 campos,
+    asociada al usuario con sesión, con mensaje y redirección al listado (CA-01)."""
+    # Arrange
+    duenio, _ = usuarios
+    client.force_login(duenio)
+    # Act
+    respuesta = client.post(reverse('tareas:crear'), datos_tarea(estado=EstadoTarea.EN_PROGRESO))
+    # Assert
+    assert respuesta.status_code == 302
+    assert respuesta['Location'] == reverse('tareas:lista')
+    tarea = Tarea.objects.get()
+    assert tarea.usuario == duenio
+    assert (tarea.nombre, tarea.descripcion) == ('Entregar informe', 'Informe final')
+    assert (tarea.fecha_inicio, tarea.fecha_fin) == (date(2026, 11, 20), date(2026, 11, 25))
+    assert tarea.estado == EstadoTarea.EN_PROGRESO
+    mensajes = [str(m) for m in get_messages(respuesta.wsgi_request)]
+    assert mensajes == ['Tarea "Entregar informe" creada con éxito.']
+
+
+# =============================================================================
+# M6 · listar_tareas()  (LEER · listado)  —  V(G) = 2  →  2 caminos
+# =============================================================================
+
+@pytest.mark.django_db
+def test_ut47_listar_sin_sesion_redirige_al_login(client):
+    """UT-47 · Camino C1 (1-2-4): sin sesión no se puede ver el listado (CA-09)."""
+    # Act
+    respuesta = client.get(reverse('tareas:lista'))
+    # Assert
+    assert respuesta.status_code == 302
+    assert reverse('cuentas:login') in respuesta['Location']
+
+
+@pytest.mark.django_db
+def test_ut48_listar_muestra_solo_las_tareas_propias(client, usuarios, tarea):
+    """UT-48 · Camino C2 (1-3-4): con sesión → listado y calendario solo con las
+    tareas del usuario, nunca las de otra persona (CA-03)."""
+    # Arrange
+    duenio, otro = usuarios
+    Tarea.objects.create(usuario=otro, nombre='Ajena', fecha_inicio=date(2026, 11, 20),
+                         fecha_fin=date(2026, 11, 20))
+    client.force_login(duenio)
+    # Act
+    respuesta = client.get(reverse('tareas:lista'))
+    # Assert
+    assert respuesta.status_code == 200
+    assert [t.nombre for t in respuesta.context['tareas']] == ['Estudiar']
+    assert (respuesta.context['calendario']['anio'], respuesta.context['calendario']['mes']) == (2026, 11)
+    assert 'Ajena' not in respuesta.content.decode()
+
+
+# =============================================================================
+# M7 · detalle_tarea()  (LEER · detalle)  —  V(G) = 3  →  3 caminos
+# =============================================================================
+
+@pytest.mark.django_db
+def test_ut49_detalle_sin_sesion_redirige_al_login(client, tarea):
+    """UT-49 · Camino C1 (1-2-6): sin sesión no se ve el detalle (CA-09)."""
+    # Act
+    respuesta = client.get(reverse('tareas:detalle', args=[tarea.pk]))
+    # Assert
+    assert respuesta.status_code == 302
+    assert reverse('cuentas:login') in respuesta['Location']
+
+
+@pytest.mark.django_db
+def test_ut50_detalle_de_tarea_ajena_o_inexistente_da_404(client, usuarios, tarea):
+    """UT-50 · Camino C2 (1-3-4-6): get_object_or_404 filtra por usuario (CA-12)."""
+    # Arrange
+    client.force_login(usuarios[1])                   # NO es el dueño
+    # Act
+    ajena = client.get(reverse('tareas:detalle', args=[tarea.pk]))
+    inexistente = client.get(reverse('tareas:detalle', args=[99999]))
+    # Assert
+    assert ajena.status_code == 404
+    assert inexistente.status_code == 404
+
+
+@pytest.mark.django_db
+def test_ut51_detalle_de_tarea_propia_muestra_sus_datos(client, usuarios, tarea):
+    """UT-51 · Camino C3 (1-3-5-6): tarea propia → 200 con la plantilla de detalle (CA-04)."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.get(reverse('tareas:detalle', args=[tarea.pk]))
+    # Assert
+    assert respuesta.status_code == 200
+    assert 'tareas/detalle.html' in [t.name for t in respuesta.templates]
+    assert respuesta.context['tarea'] == tarea
+    assert 'Estudiar' in respuesta.content.decode()
+
+
+# =============================================================================
+# M8 · editar_tarea()  (ACTUALIZAR)  —  V(G) = 6  →  6 caminos
+# =============================================================================
+
+@pytest.mark.django_db
+def test_ut52_editar_sin_sesion_redirige_al_login(client, tarea):
+    """UT-52 · Camino C1 (1-2-12): sin sesión no se edita (CA-09)."""
+    # Act
+    respuesta = client.post(reverse('tareas:editar', args=[tarea.pk]), datos_tarea(nombre='Hackeada'))
+    # Assert
+    assert respuesta.status_code == 302
+    assert reverse('cuentas:login') in respuesta['Location']
+    tarea.refresh_from_db()
+    assert tarea.nombre == 'Estudiar'
+
+
+@pytest.mark.django_db
+def test_ut53_editar_con_metodo_no_permitido_da_405(client, usuarios, tarea):
+    """UT-53 · Camino C2 (1-3-4-12): @require_http_methods solo deja GET y POST."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.put(reverse('tareas:editar', args=[tarea.pk]))
+    # Assert
+    assert respuesta.status_code == 405
+
+
+@pytest.mark.django_db
+def test_ut54_editar_tarea_ajena_da_404_y_no_la_modifica(client, usuarios, tarea):
+    """UT-54 · Camino C3 (1-3-5-6-12): otro usuario no puede editarla (CA-12)."""
+    # Arrange
+    client.force_login(usuarios[1])                   # NO es el dueño
+    # Act
+    respuesta = client.post(reverse('tareas:editar', args=[tarea.pk]), datos_tarea(nombre='Hackeada'))
+    # Assert
+    assert respuesta.status_code == 404
+    tarea.refresh_from_db()
+    assert tarea.nombre == 'Estudiar'
+
+
+@pytest.mark.django_db
+def test_ut55_editar_con_get_muestra_formulario_precargado(client, usuarios, tarea):
+    """UT-55 · Camino C4 (1-3-5-7-8-11-12): GET → formulario con los datos actuales (CA-05)."""
+    # Arrange
+    client.force_login(usuarios[0])
+    # Act
+    respuesta = client.get(reverse('tareas:editar', args=[tarea.pk]))
+    # Assert
+    assert respuesta.status_code == 200
+    assert respuesta.context['modo_edicion'] is True
+    assert respuesta.context['form'].instance == tarea
+    assert respuesta.context['form'].initial['nombre'] == 'Estudiar'
+
+
+@pytest.mark.django_db
+def test_ut56_editar_con_datos_invalidos_no_modifica(client, usuarios, tarea):
+    """UT-56 · Camino C5 (1-3-5-7-8-9-11-12): POST con fechas invertidas → no se
+    guarda nada y se muestra el error (CA-02, CA-05)."""
+    # Arrange
+    client.force_login(usuarios[0])
+    datos = datos_tarea(nombre='Cambio', fecha_inicio='2026-11-25', fecha_fin='2026-11-20')
+    # Act
+    respuesta = client.post(reverse('tareas:editar', args=[tarea.pk]), datos)
+    # Assert
+    assert respuesta.status_code == 200
+    assert respuesta.context['form'].errors['fecha_fin'] == [MENSAJE_FECHAS]
+    tarea.refresh_from_db()
+    assert tarea.nombre == 'Estudiar'
+
+
+@pytest.mark.django_db
+def test_ut57_editar_con_datos_validos_actualiza_los_cinco_campos(client, usuarios, tarea):
+    """UT-57 · Camino C6 (1-3-5-7-8-9-10-12): POST válido → se actualizan nombre,
+    descripción, fechas y estado, con mensaje y redirección (CA-05, CA-06)."""
+    # Arrange
+    client.force_login(usuarios[0])
+    datos = datos_tarea(nombre='Estudiar Django', descripcion='Repasar CRUD',
+                        fecha_inicio='2026-12-01', fecha_fin='2026-12-03',
+                        estado=EstadoTarea.COMPLETADA)
+    # Act
+    respuesta = client.post(reverse('tareas:editar', args=[tarea.pk]), datos)
+    # Assert
+    assert respuesta.status_code == 302
+    assert respuesta['Location'] == reverse('tareas:lista')
+    tarea.refresh_from_db()
+    assert (tarea.nombre, tarea.descripcion) == ('Estudiar Django', 'Repasar CRUD')
+    assert (tarea.fecha_inicio, tarea.fecha_fin) == (date(2026, 12, 1), date(2026, 12, 3))
+    assert tarea.estado == EstadoTarea.COMPLETADA
+    assert tarea.usuario == usuarios[0]
+    mensajes = [str(m) for m in get_messages(respuesta.wsgi_request)]
+    assert mensajes == ['Tarea "Estudiar Django" actualizada con éxito.']
 
 
 # =============================================================================
